@@ -1,0 +1,30 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: metrics-a
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        application: metrics-a
+    spec:
+      containers:
+        - image: quay.io/skupper/simple-prom-metrics
+          name: metrics-a
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-a
+  annotations:
+    skupper.io/proxy: tcp
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    application: metrics-a
+---

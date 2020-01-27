@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-server-conf
+  labels:
+    name: prometheus-server-conf
+data:
+  prometheus.yml: |-
+    global:
+      scrape_interval:     15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['localhost:9090']
+
+      - job_name: 'metrics-random'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['metrics-a:8080', 'metrics-b:8080']
+            labels:
+              group: 'multi-cluster'
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata: 
+  name: prometheus
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: prometheus-server
+        application: prometheus-server
+    spec:
+      containers:
+        - name: prometheus
+          image: quay.io/prometheus/prometheus
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus/"
+          ports:
+          - containerPort: 9090
+          volumeMounts:
+          - name: prometheus-config-volume
+            mountPath: /etc/prometheus/
+          - name: prometheus-storage-volume
+            mountPath: /prometheus/
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            defaultMode: 420
+            name: prometheus-server-conf
+        - name: prometheus-storage-volume
+          emptyDir: {}
