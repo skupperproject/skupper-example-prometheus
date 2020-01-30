@@ -15,16 +15,3 @@ spec:
           name: metrics-b
           imagePullPolicy: IfNotPresent
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: metrics-b
-  annotations:
-    skupper.io/proxy: tcp
-spec:
-  ports:
-  - port: 8080
-    targetPort: 8080
-  selector:
-    application: metrics-b
----
