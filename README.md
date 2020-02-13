@@ -1,6 +1,6 @@
 # Multi-cluster Prometheus Metrics Gathering Demo
 
-This tutorial demonstrates how to deploy Metric Generators across
+This tutorial demonstrates how to deploy metric generators across
 multiple Kubernetes clusters that are located in different public and
 private cloud providers and to additionally deploy the
 [Prometheus](https://prometheus.io) monitoring system to gather
@@ -8,7 +8,7 @@ metrics across multiple clusters.
 
 In this tutorial, you will create a Virtual Application Network that
 enables communications across the public and private clusters. You
-will then deploy the Metric Generators and Prometheus server to individual
+will then deploy the metric generators and Prometheus server to individual
 clusters. You will then access the Prometheus server Web UI to
 browse targets, query and graph the collected metrics.
 
@@ -31,7 +31,7 @@ Top complete this tutorial, do the following:
 
 The basis for this demonstration is to emulate the distribution of application services accross both private and public clusters and for the ability to gather generated metrics across a Virtual Application Network. As an example, the cluster deployment might be comprised of:
 
-* A "private cloud" cluster running on your local machine
+* A private cloud cluster running on your local machine
 * Two public cloud clusters running in public cloud providers
 
 While the detailed steps are not included here, this demonstration can alternatively be performed with three separate namespaces on a single cluster.
@@ -113,13 +113,13 @@ After creating the Virtual Application Network, deploy the Metrics Generators on
 1. In the terminal for the **private1** cluster, expose the first metrics generator (a) deployment:
 
    ```bash
-   skupper expose deployment metrics-a --address metrics-a --port 8080 --protocol http --target-port 8080
+   skupper expose deployment metrics-a --address metrics-a --port 8080 --protocol tcp --target-port 8080
    ```
 
 2. In the terminal for the **public1** cluster, expose the second metrics generator (b) deployment:
 
    ```bash
-   skupper expose deployment metrics-b --address metrics-b --port 8080 --protocol http --target-port 8080
+   skupper expose deployment metrics-b --address metrics-b --port 8080 --protocol tcp --target-port 8080
    ```
 
 ## Step 6: Access the Prometheus Web UI
@@ -130,11 +130,21 @@ After creating the Virtual Application Network, deploy the Metrics Generators on
    skupper expose deployment prometheus --address prometheus --port 9090 --protocol http --target-port 9090
    ```
 
-2. In the terminal for the **private1** cluser, start a firefox browser and access the prometheus UI
+2. In the terminal for the **private1** cluser, start a firefox browser and access the Prometheus UI
 
     ```bash
     /usr/bin/firefox --new-window  "http://$(kubectl get service prometheus -o=jsonpath='{.spec.clusterIP}'):9090/"
     ```
+
+3. In the Prometheus UI, navigate to *Status->Targets* and verify that the metric endpoints are in the *UP* state
+
+4. In the Prometheus UI, navigate to the *Graph* tab and insert the following expression to execute
+
+   ```bash
+   avg(rate(rpc_durations_seconds_count[1m])) by (job, service)
+   ```
+
+Observe the metrics data in either the *Console* or *Graph* view provided in the UI.
 
 ## Cleaning Up
 
