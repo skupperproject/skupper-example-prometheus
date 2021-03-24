@@ -24,12 +24,15 @@ data:
             labels:
               group: 'multi-cluster'
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata: 
   name: prometheus
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      application: prometheus
   template:
     metadata:
       labels:

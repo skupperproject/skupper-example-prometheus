@@ -27,7 +27,7 @@ Top complete this tutorial, do the following:
 ## Prerequisites
 
 * The `kubectl` command-line tool, version 1.15 or later ([installation guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/))
-* The `skupper` command-line tool, the latest version ([installation guide](https://skupper.io/start/index.html#step-1-install-the-skupper-command-line-tool-in-your-environment))
+* The `skupper` command-line tool, version 0.5 or later ([installation guide](https://skupper.io/start/index.html#step-1-install-the-skupper-command-line-tool-in-your-environment))
 
 The basis for this demonstration is to emulate the distribution of application services accross both private and public clusters and for the ability to gather generated metrics across a Virtual Application Network. As an example, the cluster deployment might be comprised of:
 
@@ -59,29 +59,29 @@ On each cluster, using the `skupper` tool, define the Virtual Application Networ
 
    ```bash
    skupper init --site-name public1
-   skupper connection-token public1-token.yaml
+   skupper token create public1-token.yaml
    ```
 
-2. In the terminal for the second public cluster, deploy the **public2** application router, create a connection token for connections from the peer clusters  and connect to the **public1** cluster:
+2. In the terminal for the second public cluster, deploy the **public2** application router, create a connection token for connections from the peer clusters  and link to the **public1** cluster:
 
    ```bash
    skupper init --site-name public2
-   skupper connection-token public2-token.yaml
-   skupper connect public1-token.yaml
+   skupper token create public2-token.yaml
+   skupper link create public1-token.yaml
    ```
 
-3. In the terminal for the private cluster, deploy the **private1** application router and define its connections to the **public1** and **public2** clusters
+3. In the terminal for the private cluster, deploy the **private1** application router and create its links to the **public1** and **public2** clusters
 
    ```bash
-   skupper init --edge --site-name private1
-   skupper connect public1-token.yaml
-   skupper connect public2-token.yaml
+   skupper init --site-name private1
+   skupper link create public1-token.yaml
+   skupper link create public2-token.yaml
    ```
 
 4. In each of the cluster terminals, verify connectivity has been established
 
    ```bash
-   skupper check-connection all
+   skupper link status
    ```
 
 ## Step 3: Deploy the Metrics Generators
