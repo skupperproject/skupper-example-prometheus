@@ -49,8 +49,10 @@ While the detailed steps are not included here, this demonstration can alternati
 
    1. On your local machine, log in to each cluster in a separate terminal session.
    2. In each cluster, create a namespace to use for the demo.
-   3. In each cluster, set the kubectl config context to use the demo namespace [(see kubectl cheat sheet)](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
-
+   3. In each cluster, set the kubectl config context to use the demo namespace [(see kubectl cheat sheet for more information)](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+   ```bash
+   kubectl config set-context --current --namespace <namespace>
+   ```
 ## Step 2: Deploy the Virtual Application Network
 
 On each cluster, using the `skupper` tool, define the Virtual Application Network and the connectivity for the peer clusters.
@@ -162,7 +164,7 @@ Restore your cluster environment by returning the resources created in the demon
 
    ```bash
    skupper unexpose deployment metrics-b
-   kubectl delete -f ~/prom-demo/skupper-example-prometheus/metrics-deployment-a.yaml
+   kubectl delete -f ~/prom-demo/skupper-example-prometheus/metrics-deployment-b.yaml
    skupper delete
    ```
 
