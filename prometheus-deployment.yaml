@@ -1,4 +1,35 @@
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: prometheus
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -19,10 +50,15 @@ data:
 
       - job_name: 'metrics-random'
         scrape_interval: 5s
-        static_configs:
-          - targets: ['metrics-a:8080', 'metrics-b:8080']
-            labels:
-              group: 'multi-cluster'
+
+        kubernetes_sd_configs:
+        - role: service
+          namespaces:
+            names:
+            - "public2"
+          selectors:
+          - role: "service"
+            label: "app=metrics"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -60,4 +96,5 @@ spec:
             name: prometheus-conf
         - name: prometheus-storage-volume
           emptyDir: {}
+      serviceAccountName: prometheus
 ---
