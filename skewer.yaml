@@ -36,6 +36,7 @@ steps:
   - standard: platform/install_the_skupper_command_line_tool
   - standard: platform/access_your_kubernetes_clusters
   - standard: platform/install_skupper_on_your_kubernetes_clusters
+  - standard: platform/create_your_kubernetes_namespaces
   - title: Create your sites
     preamble: |
       A Skupper _site_ is a location where components of your
@@ -48,7 +49,7 @@ steps:
       the outcome.
 
       **Note:** If you are using Minikube, you need to [start minikube
-      tunnel][minikube-tunnel] before you run `skupper init`.
+      tunnel][minikube-tunnel] before creating sites.
 
       [minikube-tunnel]: https://skupper.io/start/minikube.html#running-minikube-tunnel
     commands:
@@ -96,13 +97,13 @@ steps:
       public1 so we will need two tokens.
     commands:
       public1:
-        - run: skupper token issue ./public1.token --redemptions-allowed 2
+        - run: skupper token issue ~/public1.token --redemptions-allowed 2
       public2:
-        - run: skupper token redeem ./public1.token
-        - run: skupper token issue ./public2.token
+        - run: skupper token redeem ~/public1.token
+        - run: skupper token issue ~/public2.token
       private1:
-        - run: skupper token redeem ./public1.token
-        - run: skupper token redeem ./public2.token
+        - run: skupper token redeem ~/public1.token
+        - run: skupper token redeem ~/public2.token
     postamble: |
       If your terminal sessions are on different machines, you may need
       to use `scp` or a similar tool to transfer the token securely.  By
@@ -164,6 +165,8 @@ steps:
       information.
     commands:
       public2:
+        - run: kubectl wait deployment/prometheus --for=condition=Available --timeout=600s
+          apply: test
         - run: kubectl label service/metrics-a app=metrics
         - run: kubectl label service/metrics-b app=metrics
           output: |
@@ -171,25 +174,21 @@ steps:
             service/metrics-b labeled
   - title: Access the Prometheus Web UI
     preamble: |
-      In the terminal for the private1 cluser, start a firefox browser and access the Prometheus UI
+      In a browser access the Prometheus UI at http://{ip}:9090 where ip is output of following command:
     commands:
       private1:
-        - run: /usr/bin/firefox --new-window  "http://$(kubectl get service prometheus -o=jsonpath='{.spec.clusterIP}'):9090/" 
+        - run: kubectl get service prometheus -o=jsonpath='{.spec.clusterIP}')
+          apply: readme
     postamble: |
        In the Prometheus UI, navigate to Status->Target health and verify that the metric endpoints are in the UP state
   - title: Verify Metrics
     preamble: |
-      In the Prometheus UI, navigate to the Query tab and insert the following expression to execute in the + Add query
-      and click execute
-    commands:
-      private1:
-        - run: avg(rate(rpc_durations_seconds_count[1m])) by (job, service)    
+      In the Prometheus UI, navigate to the Query tab and insert the following expression to execute in the + Add query and click execute:
+      `avg(rate(rpc_durations_seconds_count[1m])) by (job, service)`
     postamble: |
         Observe the metrics data in either the Table or Graph view provided in the UI.
-  - title: Cleaning up
-    preamble: |
-      Restore your cluster environment by returning the resource created in the
-      demonstration. On each cluster, delete the demo resources and the skupper network:
+
+  - standard: skupper/cleaning_up/kubernetes_cli
     commands:
       private1:
         - run: skupper site delete --all

@@ -2,7 +2,7 @@
 
 # Multi-cluster Prometheus Metrics Gathering Demo
 
-[![main](https://github.com/lynnemorrison/skupper-example-prometheus/actions/workflows/main.yaml/badge.svg)](https://github.com/lynnemorrison/skupper-example-prometheus/actions/workflows/main.yaml)
+[![main](https://github.com/pwright/skupper-example-prometheus/actions/workflows/main.yaml/badge.svg)](https://github.com/pwright/skupper-example-prometheus/actions/workflows/main.yaml)
 
 This example is part of a [suite of examples][examples] showing the
 different ways you can use [Skupper][website] to connect services
@@ -18,15 +18,16 @@ across cloud providers, data centers, and edge sites.
 * [Step 1: Install the Skupper command-line tool](#step-1-install-the-skupper-command-line-tool)
 * [Step 2: Access your Kubernetes clusters](#step-2-access-your-kubernetes-clusters)
 * [Step 3: Install Skupper on your Kubernetes clusters](#step-3-install-skupper-on-your-kubernetes-clusters)
-* [Step 4: Create your sites](#step-4-create-your-sites)
-* [Step 5: Link your sites](#step-5-link-your-sites)
-* [Step 6: Deploy the Metrics Generators](#step-6-deploy-the-metrics-generators)
-* [Step 7: Deploy the Prometheus Server on the other public cluster.](#step-7-deploy-the-prometheus-server-on-the-other-public-cluster)
-* [Step 8: Expose the Metrics Deployments to the Virtual Application Network](#step-8-expose-the-metrics-deployments-to-the-virtual-application-network)
-* [Step 9: Label services as Prometheus dedicated collection points](#step-9-label-services-as-prometheus-dedicated-collection-points)
-* [Step 10: Access the Prometheus Web UI](#step-10-access-the-prometheus-web-ui)
-* [Step 11: Verify Metrics](#step-11-verify-metrics)
-* [Step 12: Cleaning up](#step-12-cleaning-up)
+* [Step 4: Create your Kubernetes namespaces](#step-4-create-your-kubernetes-namespaces)
+* [Step 5: Create your sites](#step-5-create-your-sites)
+* [Step 6: Link your sites](#step-6-link-your-sites)
+* [Step 7: Deploy the Metrics Generators](#step-7-deploy-the-metrics-generators)
+* [Step 8: Deploy the Prometheus Server on the other public cluster.](#step-8-deploy-the-prometheus-server-on-the-other-public-cluster)
+* [Step 9: Expose the Metrics Deployments to the Virtual Application Network](#step-9-expose-the-metrics-deployments-to-the-virtual-application-network)
+* [Step 10: Label services as Prometheus dedicated collection points](#step-10-label-services-as-prometheus-dedicated-collection-points)
+* [Step 11: Access the Prometheus Web UI](#step-11-access-the-prometheus-web-ui)
+* [Step 12: Verify Metrics](#step-12-verify-metrics)
+* [Cleaning up](#cleaning-up)
 * [Next steps](#next-steps)
 * [About this example](#about-this-example)
 
@@ -54,14 +55,8 @@ browse targets, query and graph the collected metrics.
 * The `kubectl` command-line tool, version 1.15 or later
   ([installation guide][install-kubectl]).
 
-* The `skupper` command-line tool, version 2.0 or later.  On Linux
-  or Mac, you can use the install script (inspect it
-  [here][cli-install-script]) 
-
 [kube-providers]: https://skupper.io/start/kubernetes.html
 [install-kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[cli-install-script]: https://github.com/skupperproject/skupper-website/blob/main/input/install.sh
-[cli-install-docs]: https://skupper.io/install/
 
 ## Step 1: Install the Skupper command-line tool
 
@@ -73,7 +68,7 @@ On Linux or Mac, you can use the install script (inspect it
 [here][install-script]) to download and extract the command:
 
 ~~~ shell
-curl https://skupper.io/install.sh | sh -s -- --version 2.0.0
+curl https://skupper.io/v2/install.sh | sh
 ~~~
 
 The script installs the command under your home directory.  It
@@ -106,24 +101,21 @@ _**Public1:**_
 
 ~~~ shell
 export KUBECONFIG=~/.kube/config-public1
-kubectl create namespace public1
-kubectl config set-context --current --namespace public1
+<provider-specific login command>
 ~~~
 
 _**Public2:**_
 
 ~~~ shell
 export KUBECONFIG=~/.kube/config-public2
-kubectl create namespace public2
-kubectl config set-context --current --namespace public2
+<provider-specific login command>
 ~~~
 
 _**Private1:**_
 
 ~~~ shell
 export KUBECONFIG=~/.kube/config-private1
-kubectl create namespace private1
-kubectl config set-context --current --namespace private1
+<provider-specific login command>
 ~~~
 
 **Note:** The login procedure varies by provider.
@@ -155,7 +147,38 @@ _**Private1:**_
 kubectl apply -f https://skupper.io/v2/install.yaml
 ~~~
 
-## Step 4: Create your sites
+## Step 4: Create your Kubernetes namespaces
+
+The example application has different components deployed to
+different Kubernetes namespaces.  To set up our example, we need
+to create the namespaces.
+
+For each cluster, use `kubectl create namespace` and `kubectl
+config set-context` to create the namespace you wish to use and
+set the namespace on your current context.
+
+_**Public1:**_
+
+~~~ shell
+kubectl create namespace public1
+kubectl config set-context --current --namespace public1
+~~~
+
+_**Public2:**_
+
+~~~ shell
+kubectl create namespace public2
+kubectl config set-context --current --namespace public2
+~~~
+
+_**Private1:**_
+
+~~~ shell
+kubectl create namespace private1
+kubectl config set-context --current --namespace private1
+~~~
+
+## Step 5: Create your sites
 
 A Skupper _site_ is a location where components of your
 application are running.  Sites are linked together to form a
@@ -167,7 +190,7 @@ namespaces. This deploys the Skupper router. Then use kubectl get site to see
 the outcome.
 
 **Note:** If you are using Minikube, you need to [start minikube
-tunnel][minikube-tunnel] before you run `skupper init`.
+tunnel][minikube-tunnel] before creating sites.
 
 [minikube-tunnel]: https://skupper.io/start/minikube.html#running-minikube-tunnel
 
@@ -216,7 +239,7 @@ site.skupper.io/private1 created
 site.skupper.io/private1 condition met
 ~~~
 
-## Step 5: Link your sites
+## Step 6: Link your sites
 
 A Skupper _link_ is a channel for communication between two sites.
 Links serve as a transport for application connections and
@@ -244,21 +267,21 @@ public1 so we will need two tokens.
 _**Public1:**_
 
 ~~~ shell
-skupper token issue ./public1.token --redemptions-allowed 2
+skupper token issue ~/public1.token --redemptions-allowed 2
 ~~~
 
 _**Public2:**_
 
 ~~~ shell
-skupper token redeem ./public1.token
-skupper token issue ./public2.token
+skupper token redeem ~/public1.token
+skupper token issue ~/public2.token
 ~~~
 
 _**Private1:**_
 
 ~~~ shell
-skupper token redeem ./public1.token
-skupper token redeem ./public2.token
+skupper token redeem ~/public1.token
+skupper token redeem ~/public2.token
 ~~~
 
 If your terminal sessions are on different machines, you may need
@@ -266,7 +289,7 @@ to use `scp` or a similar tool to transfer the token securely.  By
 default, tokens expire after a single use or 15 minutes after
 creation.
 
-## Step 6: Deploy the Metrics Generators
+## Step 7: Deploy the Metrics Generators
 
 After creating the Skupper network, deploy the Metrics Generators
 on one of the public clusters and the private cluster.
@@ -297,7 +320,7 @@ $ kubectl apply -f ./public1-crs/metrics-deployment-b.yaml
 deployment.apps/metrics-b created
 ~~~
 
-## Step 7: Deploy the Prometheus Server on the other public cluster.
+## Step 8: Deploy the Prometheus Server on the other public cluster.
 
 Deploy the Prometheus server in the public2 cluster.
 
@@ -318,7 +341,7 @@ configmap/prometheus-conf created
 deployment.apps/prometheus created
 ~~~
 
-## Step 8: Expose the Metrics Deployments to the Virtual Application Network
+## Step 9: Expose the Metrics Deployments to the Virtual Application Network
 
 Create Skupper listeners and connectors to expose the metric generator deployments in each namespace.
 
@@ -368,7 +391,7 @@ listener.skupper.io/metrics-b created
 connector.skupper.io/prometheus created
 ~~~
 
-## Step 9: Label services as Prometheus dedicated collection points
+## Step 10: Label services as Prometheus dedicated collection points
 
 In Prometheus, a service label with "app=metrics" indicates that
 the service is specifically designed to expose metrics for
@@ -391,35 +414,29 @@ service/metrics-a labeled
 service/metrics-b labeled
 ~~~
 
-## Step 10: Access the Prometheus Web UI
+## Step 11: Access the Prometheus Web UI
 
-In the terminal for the private1 cluser, start a firefox browser and access the Prometheus UI
+In a browser access the Prometheus UI at http://{ip}:9090 where ip is output of following command:
 
 _**Private1:**_
 
 ~~~ shell
-/usr/bin/firefox --new-window  "http://$(kubectl get service prometheus -o=jsonpath='{.spec.clusterIP}'):9090/"
+kubectl get service prometheus -o=jsonpath='{.spec.clusterIP}')
 ~~~
 
 In the Prometheus UI, navigate to Status->Target health and verify that the metric endpoints are in the UP state
 
-## Step 11: Verify Metrics
+## Step 12: Verify Metrics
 
-In the Prometheus UI, navigate to the Query tab and insert the following expression to execute in the + Add query
-and click execute
-
-_**Private1:**_
-
-~~~ shell
-avg(rate(rpc_durations_seconds_count[1m])) by (job, service)
-~~~
+In the Prometheus UI, navigate to the Query tab and insert the following expression to execute in the + Add query and click execute:
+`avg(rate(rpc_durations_seconds_count[1m])) by (job, service)`
 
 Observe the metrics data in either the Table or Graph view provided in the UI.
 
-## Step 12: Cleaning up
+## Cleaning up
 
-Restore your cluster environment by returning the resource created in the
-demonstration. On each cluster, delete the demo resources and the skupper network:
+To remove Skupper and the other resources from this exercise, use
+the following commands.
 
 _**Private1:**_
 

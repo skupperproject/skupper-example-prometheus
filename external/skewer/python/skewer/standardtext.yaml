@@ -31,14 +31,8 @@ prerequisites: |
     * The `kubectl` command-line tool, version 1.15 or later
       ([installation guide][install-kubectl]).
 
-    * The `skupper` command-line tool, version 2.0 or later.  On Linux
-      or Mac, you can use the install script (inspect it
-      [here][cli-install-script]) 
-
     [kube-providers]: https://skupper.io/start/kubernetes.html
     [install-kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-    [cli-install-script]: https://github.com/skupperproject/skupper-website/blob/main/input/install.sh
-    [cli-install-docs]: https://skupper.io/install/
 next_steps: |
     Check out the other [examples][examples] on the Skupper website.
 about_this_example: |
